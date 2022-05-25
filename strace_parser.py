@@ -34,31 +34,13 @@ class syscall:
     op = ""
     args = []
     retval = 0
-'''
-    def get_open_arg(self, args):
-        self.file = args[1]
-        self.flags_create = "O_CREATE" in args[2]
-    
-    def get_close_arg(self, args):
-        self.fd = int(args[0])
-
-    def get_write_arg(self, args):
-        self.fd = int(args[0])
-        self.change_size = int(args[2])
-
-    def get_unlink_arg(self, args):
-        self.file = args[0]
-'''
         
-
     def out_syscall(self):
-        print(f"This sysop is {self.op}")
-        print(f"This fd is {self.fd}")
-        print(f"This file is {self.file}")
         print(f"This time is {self.time}")
+        print(f"This sysop is {self.op}")
+        print(f"This args is {self.args}")
         print(f"This retval is {self.retval}")
-        print(f"This flags for create is {self.flags_create}")
-        print(f"This flags for lseek is {self.flags_lseek}")
+        
     
 
 
@@ -74,31 +56,19 @@ def parse_command(line):
     #print(f"timestamp: {timestamp} \n")
     line = line.replace(timestamp,'').strip()
     if "()" in line:
-        command,rest = line.split('()',1)
-        features = []
-    else:
-        command = re.findall('.+[(].+[)]',line)[0].strip()
-        rest = line.replace(command,'')
-        command,features = command.split('(',1)
-        features = [x.strip() for x in re.sub('"|\]|\[|[*]','',features).split(',')]
-        features[-1] = features[-1].replace(')','')
+        command,rest = line.replace('()','')
+    command = re.findall('.+[(].+[)]',line)[0].strip()
+    rest = line.replace(command,'')
+    command,features = command.split('(',1)
+    features = [x.strip() for x in re.sub('"|\]|\[|[*]','',features).split(',')]
+    features[-1] = features[-1].replace(')','')
     #return_code = "return-code_%s" %rest.replace('=','',1).strip()
     new_line.op = command
-    '''
-    #for different operation use different assign
-    if(new_line.op == "openat"):
-        new_line.get_open_arg(features)
-    elif new_line.op == "close":
-        new_line.get_close_arg(features)
-    elif new_line.op == "unlink":
-        new_line.get_unlink_arg(features)
-    elif new_line.op == "write":
-        new_line.get_write_arg(features)
-    '''
+    new_line.args = features
     new_line.retval = int(rest.replace('=','',1).strip())
     new_line.out_syscall()
     #print(f"feature {features} \n")
-    return features
+    return new_line
 
 files = []
 with open("trace.log",'r',encoding='utf8') as log_file:
