@@ -1,0 +1,4 @@
+15:11:50.670885 openat(AT_FDCWD, "/tmp/rocksdb-1003/dbbench/", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 6
+15:11:50.670885 write(1, "/tmp/rocksdb-1003/dbbench/", 153) = 153
+15:11:50.670000 close(3) = 0
+15:11:50.670885 unlink("/tmp/rocksdb-1003/") = 0
