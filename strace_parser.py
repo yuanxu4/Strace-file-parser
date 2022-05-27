@@ -270,7 +270,11 @@ with open("trace.log",'r',encoding='utf8') as log_file:
     for line in lines:
         linesys = parse_strace(line)
         linesys.do_syscall()
-
+        
+for file in deleted_files:
+    if file.filepath == "/tmp/rocksdbtest-1003/dbbench/000004.log":
+        file.out_file()
+        file.out_OPflow()
 for file in files:
     if file.filepath == "/tmp/rocksdbtest-1003/dbbench/000004.log":
         file.out_file()
