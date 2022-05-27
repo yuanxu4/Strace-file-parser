@@ -22,10 +22,13 @@ class file_t:
     OPflow = []
 
     def out_file(self):
-        print(f"This file {self.filepath}: {self.create_time}-{self.delete_time} size: {self.size}")
+        tplt = "{0:{3}^10}\t{1:{3}^10}\t{2:^10}"
+        print(f"{self.filepath : <50} {self.create_time:<15} - {self.delete_time:<15} size: {self.size:<20}")
+        #print(f"{self.create_time:<15} - {self.delete_time:<15} size: {self.size:<20}")
+
     def out_OPflow(self):
         for sys in self.OPflow:
-            print(f"OPflow {sys.time} {sys.op} {sys.args} {sys.retval}")
+            print(f"{sys.time:<15} {sys.op:<10} {str(sys.args):<130} {sys.retval:<10}")
 
 
 
@@ -41,7 +44,7 @@ class syscall:
         exit(0)
         
     def out_syscall(self):
-        print(f"{self.time} {self.op} {self.args} {self.retval}")
+        print(f"{self.time :<15} {self.op:<10} {self.args:<50} {self.retval:<10}")
     
     def do_syscall(self):
         if self.op == "openat":
@@ -214,6 +217,7 @@ class syscall:
             for file in files:
                 if int(self.args[0]) in file.fd_cur:  
                         file.size = int(self.args[1])
+                        file.OPflow.append(self)
                         if file.off > file.size:
                             file.off = file.size
                         return
@@ -252,10 +256,10 @@ def show_files(files):
         print("")
     return 0
 
-def clean_files(files):
-    for file in files:
+def clean_files(f):
+    for file in f:
         if "/tmp/rocksdbtest-1003/dbbench" not in file.filepath:
-            files.remove(file)
+            f.remove(file)
             print(f"removed {file.filepath}")
 
 
@@ -267,12 +271,13 @@ with open("trace.log",'r',encoding='utf8') as log_file:
         linesys = parse_strace(line)
         linesys.do_syscall()
 
-# for file in files:
-#     if file.filepath == "/tmp/rocksdbtest-1003/dbbench/000004.log":
-#         file.out_file()
-#         file.out_OPflow()
-show_files(files)
-print("=========================================================")
-show_files(deleted_files)
+for file in files:
+    if file.filepath == "/tmp/rocksdbtest-1003/dbbench/000004.log":
+        file.out_file()
+        file.out_OPflow()
+# clean_files(files)
+# show_files(files)
+# print("=========================================================")
+# show_files(deleted_files)
 print("done")
 
