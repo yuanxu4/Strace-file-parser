@@ -1,4 +1,0 @@
-1. strace may delete a file then close it
-2. it can open a file for two times so the file can have a lot of fd
-3. can write into a file after unlink it 
-4. can fallocate a file after unlink it

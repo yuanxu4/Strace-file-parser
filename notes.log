@@ -1,0 +1,37 @@
+1. strace may delete a file then close it
+2. it can open a file for two times so the file can have a lot of fd
+3. can write into a file after unlink it 
+4. can fallocate a file after unlink it
+
+openat: I try to find the file in the files list, if find the file in same name, then add the fd in to fd_cur.
+        if the file not in the list, we  check if the flag have O_CREAT, if have we set the create time, if not we set the create time into "create before", then set the fd
+
+close:  I find the file in the files list and deleted_files list with the fd, then deleted the fd from the fd_cur
+
+write:  I try to find the file with the fd in files and deleted_files list, then check the offset, if the offset is same with file size I just add the retval to both.
+        or we just add the retval to the offset. then check if offset larger the size, we make size equal to the offset. That is to say the offset is always smaller than size. 
+
+lseek:  I just change the offset to the retval. and if the offset is larger than the size, make size equal to the offset
+
+unlink: I just set the delete time of the file, and remove the file from the files list and append into the deleted_files list
+
+fallocate: I just check if the allocate size is larger than the file size, if it is ,then make the file size equal to the allocate size and not change the offset
+
+rename: I just find the same name file in the files list, and then change the name of it
+
+mkdir: create a file with and set the create time 
+
+rmdir: find the dir name and than delete it and set the delete time
+
+fsync and fdatasync: I just add it into the OPflow
+
+pread64 and fcntl: I just add it into the OPflow, because the pread64 is not change the seek pointer(offset)
+
+read: I add the retval to the off(seek pointer)
+
+ftruncate: I just change the file size to the args[2] the length argument, and check is the offset(seek pointer) is larger than the size, make the offset equal with the size
+
+---------------------not support-------------------------------
+mmap fstatfs newfstatat getdents64 readlink access sync_file_range execve 
+
+

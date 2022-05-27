@@ -4,6 +4,15 @@ from re import compile as recompile
 import turtle
 
 class file_t:
+    def __init__(self):
+        self.filepath = ""
+        self.create_time = ""
+        self.delete_time = ""
+        self.fd_cur = []
+        self.size = 0
+        self.off = 0
+        self.OPflow = []
+    
     filepath = ""
     create_time = ""
     delete_time = ""
@@ -13,11 +22,11 @@ class file_t:
     OPflow = []
 
     def out_file(self):
-        print(f"This file is {self.filepath}")
-        print(f"This file's create time is {self.create_time}")
-        print(f"This file's delete time is {self.delete_time}")
-        print(f"This file's fd is {self.fd_cur}")
-        print(f"This file's size is {self.size}")
+        print(f"This file {self.filepath}: {self.create_time}-{self.delete_time} size: {self.size}")
+    def out_OPflow(self):
+        for sys in self.OPflow:
+            print(f"OPflow {sys.time} {sys.op} {sys.args} {sys.retval}")
+
 
 
 class syscall:
@@ -35,51 +44,42 @@ class syscall:
         print(f"{self.time} {self.op} {self.args} {self.retval}")
     
     def do_syscall(self):
-        #when open their are four situation 
-        # 1: create a new file 
-        # 2: open a exist file 
-        # 3: open a not exist file(create before)
-        # 4: open a dirctory mkdir before or open before
-        # 5: open a dirctory exist
         if self.op == "openat":
-            #when open a dir
             for file in files:
-                #2 open a exist file
+                #open a exist file
                 if file.filepath == self.args[1]:
                     if self.retval not in file.fd_cur:
                             file.fd_cur.append(self.retval)
                     file.OPflow.append(self)
-                    return 0
-                # create a new file
+                    return 
+            # create a new file
             new_file = file_t()
             new_file.fd_cur = []
             new_file.filepath = self.args[1]
             new_file.fd_cur.append(self.retval)
-            #1
             if "O_CREAT" in self.args[-2]:
                 new_file.create_time = self.time
             else:
-                #3 if the file create before we ignore its original size only keep the size change
+                #if the file create before we ignore its original size only keep the size change
                 new_file.create_time = "create before"
             new_file.size = 0
             new_file.off = 0
             new_file.OPflow = []
             new_file.OPflow.append(self)
             files.append(new_file)
-            return 0
-
+            return 
 
         elif self.op == "close":
             for file in files:
                 if int(self.args[0]) in file.fd_cur:
                     file.fd_cur.remove(int(self.args[0])) 
                     file.OPflow.append(self)
-                    return 0
+                    return 
             for file in deleted_files:
                 if int(self.args[0]) in file.fd_cur:
                     file.fd_cur.remove(int(self.args[0])) 
                     file.OPflow.append(self)
-                    return 0
+                    return 
             #show_files(deleted_files)
             self.do_err("cant close a file that not open")
 
@@ -99,7 +99,7 @@ class syscall:
                         if file.off > file.size:
                             file.size = file.off
                     file.OPflow.append(self)
-                    return 0
+                    return 
             for file in deleted_files:
                 if int(self.args[0]) in file.fd_cur:
                     if file.off == file.size:
@@ -110,7 +110,7 @@ class syscall:
                         if file.off > file.size:
                             file.size = file.off
                     file.OPflow.append(self)
-                    return 0
+                    return 
             self.do_err("cant write into a file that not open")
         
         elif self.op == "lseek":
@@ -119,8 +119,10 @@ class syscall:
                     if self.retval < 0:
                         self.do_err("cant change the offset to the negative")            
                     file.off = self.retval
+                    if file.off > file.size:
+                        file.size = file.off
                     file.OPflow.append(self)
-                    return 0
+                    return 
             self.do_err("cant lseek change a file that not open")
 
         elif self.op == "unlink":
@@ -131,7 +133,7 @@ class syscall:
                     files.remove(file)
                     deleted_files.append(file)
             # if not find the file just ignore this op
-            return 0
+            return 
         
         # elif self.op == "fsync" | self.op == "fdatasync" | self.op == "pread64" | self.op == "fcntl" | self.op == "newfstatat" | self.op == "fstatfs":
         #     for file in files:
@@ -147,13 +149,13 @@ class syscall:
                     if int(self.args[3]) > file.size:
                         file.size = int(self.args[3])
                     file.OPflow.append(self)
-                    return 0
+                    return 
             for file in deleted_files:
                 if int(self.args[0]) in file.fd_cur:
                     if int(self.args[3]) > file.size:
                         file.size = int(self.args[3])
                     file.OPflow.append(self)
-                    return 0
+                    return 
             self.do_err("cant fallocate a file that not open")
 
         elif self.op == "rename":
@@ -161,7 +163,7 @@ class syscall:
                 if file.filepath == self.args[0]:
                     file.filepath = self.args[1]
                     file.OPflow.append(self)
-                    return 0
+                    return 
 
             self.do_err("can't rename a file not exist")
 
@@ -171,10 +173,9 @@ class syscall:
             new_file.OPflow = []
             new_file.filepath = self.args[0]
             new_file.create_time = self.time
-            new_file.is_dir = 1
             new_file.OPflow.append(self)
             files.append(new_file)
-            return 0
+            return 
         
         elif self.op == "rmdir":
             for file in files:
@@ -184,26 +185,44 @@ class syscall:
                     files.remove(file)
                     deleted_files.append(file)
             # if not find the file just ignore this op
-            return 0
+            return 
 
 
         elif self.op == "fsync" or self.op == "fdatasync":
             for file in files:
                 if int(self.args[0]) in file.fd_cur:
                     file.OPflow.append(self)
-                    return 0
+                    return 
             self.do_err("cant sync the file not open")
 
         elif self.op == "pread64" or self.op == "fcntl":
             for file in files:
                 if int(self.args[0]) in file.fd_cur:
                     file.OPflow.append(self)
-                    return 0
+                    return 
             self.do_err("cant sync the file not open")
 
+        elif self.op == "read":
+            for file in files:
+                if int(self.args[0]) in file.fd_cur:
+                    file.OPflow.append(self)
+                    file.off += self.retval
+                    return
+            self.do_err("cant read the file not open")
+        
+        elif self.op == "ftruncate":
+            for file in files:
+                if int(self.args[0]) in file.fd_cur:  
+                        file.size = int(self.args[1])
+                        if file.off > file.size:
+                            file.off = file.size
+                        return
+            self.do_err("cant ftruncate the file not open")
+              
+
         else:
-            #mmap fstatfs newfstatat getdents64 ftruncate readlink access sync_file_range execve
-            return 0
+            #mmap fstatfs newfstatat getdents64 readlink access sync_file_range execve
+            return 
 
 
 def parse_strace(line):
@@ -233,6 +252,12 @@ def show_files(files):
         print("")
     return 0
 
+def clean_files(files):
+    for file in files:
+        if "/tmp/rocksdbtest-1003/dbbench" not in file.filepath:
+            files.remove(file)
+            print(f"removed {file.filepath}")
+
 
 files = []
 deleted_files = []
@@ -241,6 +266,11 @@ with open("trace.log",'r',encoding='utf8') as log_file:
     for line in lines:
         linesys = parse_strace(line)
         linesys.do_syscall()
+
+# for file in files:
+#     if file.filepath == "/tmp/rocksdbtest-1003/dbbench/000004.log":
+#         file.out_file()
+#         file.out_OPflow()
 show_files(files)
 print("=========================================================")
 show_files(deleted_files)
