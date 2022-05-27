@@ -40,6 +40,13 @@ This is a strace parser to get the IO flow for each file. We can get each file '
 ```
 - You can use out_OPflow() to get the detailed IO flow of each files
 ```text
+/tmp/rocksdbtest-1003/dbbench/000004.log           14:48:34.959928 - 14:48:35.153869 size: 0                   
+14:48:34.959928 openat     ['AT_FDCWD', '/tmp/rocksdbtest-1003/dbbench/000004.log', 'O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC', '0644']                             7         
+14:48:34.959966 fcntl      ['7', 'F_GETFD']                                                                                                                   0         
+14:48:34.959986 fcntl      ['7', 'F_SETFD', 'FD_CLOEXEC']                                                                                                     0         
+14:48:34.960051 fcntl      ['7', '0x40c/*F_???*/', '0x7fff2b0b7eec']                                                                                          0         
+14:48:35.152920 close      ['7']                                                                                                                              0         
+14:48:35.153869 unlink     ['/tmp/rocksdbtest-1003/dbbench/000004.log']                                                                                       0         
 /tmp/rocksdbtest-1003/dbbench/000004.log           14:48:35.346005 -                 size: 1380                
 14:48:35.346005 openat     ['AT_FDCWD', '/tmp/rocksdbtest-1003/dbbench/000004.log', 'O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC', '0644']                             7         
 14:48:35.346042 fcntl      ['7', 'F_GETFD']                                                                                                                   0         
@@ -57,8 +64,9 @@ This is a strace parser to get the IO flow for each file. We can get each file '
 14:48:35.522705 write      ['7', '\\33\\327\\264\\305\\203\\0\\1\\t\\0\\0\\0\\0\\0\\0\\0\\1\\0\\0\\0\\1\\20\\0\\0\\0\\0\\0\\0\\0\\010000...', '138']          138       
 14:48:35.522726 write      ['7', '\\360\\273\\216\\v\\203\\0\\1\\n\\0\\0\\0\\0\\0\\0\\0\\1\\0\\0\\0\\1\\20\\0\\0\\0\\0\\0\\0\\0\\t000...', '138']             138       
 14:48:35.523783 ftruncate  ['7', '1380']                                                                                                                      0         
-14:48:35.523839 close      ['7']                                                                                                                              0        
+14:48:35.523839 close      ['7']                                                                                                                              0         
 ```
+
 
 ## What's syscall included
 
