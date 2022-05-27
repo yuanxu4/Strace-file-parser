@@ -1,7 +1,6 @@
 ## Table of contents
 
 - [Introduction](#introduction)
-- [Status](#status)
 - [What's included](#whats-included)
 - [Bugs and feature requests](#bugs-and-feature-requests)
 
@@ -60,9 +59,6 @@ This is a strace parser to get the IO flow for each file. We can get each file '
 14:48:35.523783 ftruncate  ['7', '1380']                                                                                                                      0         
 14:48:35.523839 close      ['7']                                                                                                                              0        
 ```
-## Status
-
-Here goes all the budgets
 
 ## What's syscall included
 
