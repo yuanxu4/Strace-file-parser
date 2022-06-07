@@ -9,7 +9,7 @@ if __name__ == "__main__":
     TRACE_DIR = "../gsf-filesrv/"
     if len(sys.argv) >= 2:
         TRACE_FILE = sys.argv[1]
-    line_threshold = 100#float('inf')
+    line_threshold = float('inf')
 
     openfiles = [f for f in os.listdir(TRACE_DIR)]
 
@@ -36,6 +36,9 @@ if __name__ == "__main__":
         all_trace[i] = args
         if i >= line_threshold - 1:
                 break
-        if i != 0 and i % 1000000 == 0:
+        if i != 0 and i % 100000 == 0:
             print(f"{i} lines added")
+    alltrace_sorted = all_trace[all_trace[:,0].argsort()]
+    with open('../all_trace.npy', 'wb') as npfile:
+        np.save(npfile, alltrace_sorted)
 

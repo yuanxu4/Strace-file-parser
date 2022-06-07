@@ -1,8 +1,10 @@
 ## Table of contents
 
-- [Introduction](#introduction)
+- [Introduction for strace parser](#introduction)
 - [What's included](#whats-included)
 - [Bugs and feature requests](#bugs-and-feature-requests)
+- [Introduction for gsf parser](#introduction_over_size)
+
 
 
 ## introduction
