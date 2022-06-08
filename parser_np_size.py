@@ -97,7 +97,8 @@ def do_syscall(syscall):
 if __name__ == "__main__":
     # set input file name
     TRACE_FILE = "../all_trace.npy"
-    OUT_FILE = "../rwsize_file"
+    OUT_FILE1 = "../rsize_file"
+    OUT_FILE2 = "../wsize_file"
     if len(sys.argv) >= 2:
         TRACE_FILE = sys.argv[1]
     
@@ -116,12 +117,13 @@ if __name__ == "__main__":
     files_sorted_w = sorted(files.items(), key = lambda x:x[1].wsize, reverse = True)
     #with open(OUT_FILE, "w") as out_f:
     print("get the most useful file")
-    with open(OUT_FILE, "w") as out_f:
-        print("The 1000 largest read file",file = out_f)
+    with open(OUT_FILE1, "w") as out_f:
+        # print("The 1000 largest read file",file = out_f)
         for i, f in enumerate(files_sorted_r):
             if i < 1000:
                 print(int(f[0]),file = out_f)
-        print("\n\n\nThe 1000 largest write file",file = out_f)
+    with open(OUT_FILE2, "w") as out_f:
+        # print("\n\n\nThe 1000 largest write file",file = out_f)
         for i, f in enumerate(files_sorted_w):
             if i < 1000:
                 print(int(f[0]),file=out_f)

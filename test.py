@@ -1,9 +1,14 @@
 import numpy as np
+from joblib import Parallel, delayed
+import time, math
 
-a = np.arange(10).reshape(2,5)
-b = np.array(([3,5,7],
-            [1,4,7],
-            [9,2,56]))
-b = b[b[:,0].argsort()]
-print(b)
+def my_fun(i):
+    
+    return 
 
+num = 10000000
+start = time.time()
+for i in range(num):
+    my_fun(i)
+
+end = time.time()

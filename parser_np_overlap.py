@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from joblib import Parallel, delayed
 #from line_profiler import LineProfiler
 # from datetime import datetime as dt
 # import matplotlib.pyplot as plt
@@ -18,7 +19,8 @@ class file_t:
         self.time_stamp = []
         self.time_open = 0
         self.overtime = 0
-
+        self.open_count = 0
+    open_count = 0
     inode = -1
     size = -1
     OPflow = []
@@ -29,18 +31,13 @@ class file_t:
     def print_file(self):
         print(f"inode: {self.inode:<15} size: {self.size:<10}")
 
-    def print_OPflow(self):
-        out_str = ""
-        for sys in self.OPflow[:1]:
-            out_str += f"{sys.time:<15} {sys.op:<10} {sys.inode:<10} {sys.isize:<10} {sys.off:<10} {sys.opsize:<10}\n"
-        print(out_str)
-
     
 
 def add_newfile(syscall, i, s):
     new_file = file_t(i, s)
     new_file.OPflow.append(syscall)
     new_file.time_open = syscall[1]
+    new_file.open_count += 1
     files[i] = new_file
     #print(f"{self.seq} add {self.inode}")
     return
@@ -53,9 +50,11 @@ def do_syscall(syscall):
     if syscall[2] == 0:
         file = files.get(syscall[3])
         if file is not None:
+            file.open_count += 1
             file.size = syscall[4]
             file.OPflow.append(syscall)
-            file.time_open = syscall[1]
+            if file.open_count == 1:
+                file.time_open = syscall[1]
             return 
         add_newfile(syscall, syscall[3], syscall[4])
         return 
@@ -64,11 +63,13 @@ def do_syscall(syscall):
         file = files.get(syscall[3])
         if file is not None:
             file.size = syscall[4]
+            file.open_count -= 1
             file.OPflow.append(syscall)
             if file.time_open != 0.0:
-                if syscall[1] - file.time_open >= 10:
-                    file.time_stamp.append((file.time_open, syscall[1]))
-                file.time_open = 0.0
+                if file.open_count  == 0:
+                    if syscall[1] - file.time_open >= 50:
+                        file.time_stamp.append((file.time_open, syscall[1]))
+                    file.time_open = 0.0
         return
     # FSYNC
     if syscall[2] == 4 or syscall[2] == 5:
@@ -103,6 +104,18 @@ def overlap(tuple1, tuple2):
     min_end = min(tuple1[1], tuple2[1])
     return (max_start, min_end), min_end - max_start
 
+for i, f in enumerate(files.values()):
+        print(i)
+        # print(len(f.time_stamp))
+        for tuple in f.time_stamp:
+            for f2 in files.values():
+                if f2 != f:
+                    # print(len(f2.time_stamp))
+                    for tuple2 in f2.time_stamp:
+                        intersect, intersect_t = overlap(tuple, tuple2)
+                        if intersect_t >= 10:
+                            f.overtime += intersect_t
+
 
 if __name__ == "__main__":
     # set input file name
@@ -111,7 +124,7 @@ if __name__ == "__main__":
     if len(sys.argv) >= 2:
         TRACE_FILE = sys.argv[1]
     
-    line_threshold = 100000000 // 24 # float('inf')
+    line_threshold = float('inf')
 
 
     all_traces = np.load(TRACE_FILE)
@@ -125,6 +138,7 @@ if __name__ == "__main__":
     print("caculate overlap...")
     #with open(OUT_FILE, "w") as out_f:
     print(f"file length is {len(files)}")
+
     for i, f in enumerate(files.values()):
         print(i)
         # print(len(f.time_stamp))
