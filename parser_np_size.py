@@ -99,8 +99,6 @@ if __name__ == "__main__":
     TRACE_FILE = "../all_trace.npy"
     OUT_FILE1 = "../rsize_file"
     OUT_FILE2 = "../wsize_file"
-    if len(sys.argv) >= 2:
-        TRACE_FILE = sys.argv[1]
     
     line_threshold = float('inf')
 
@@ -120,10 +118,10 @@ if __name__ == "__main__":
     with open(OUT_FILE1, "w") as out_f:
         # print("The 1000 largest read file",file = out_f)
         for i, f in enumerate(files_sorted_r):
-            if i < 1000:
+            if i < 4000:
                 print(int(f[0]),file = out_f)
     with open(OUT_FILE2, "w") as out_f:
         # print("\n\n\nThe 1000 largest write file",file = out_f)
         for i, f in enumerate(files_sorted_w):
-            if i < 1000:
+            if i < 4000:
                 print(int(f[0]),file=out_f)

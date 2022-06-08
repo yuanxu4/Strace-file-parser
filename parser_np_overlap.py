@@ -15,7 +15,7 @@ class file_t:
     def __init__(self, i, s):
         self.inode = i
         self.size = s
-        self.OPflow = []
+        # self.OPflow = []
         self.time_stamp = []
         self.time_open = 0
         self.overtime = 0
@@ -23,7 +23,7 @@ class file_t:
     open_count = 0
     inode = -1
     size = -1
-    OPflow = []
+    # OPflow = []
     time_stamp = []
     time_open = 0
     overtime = 0
@@ -35,7 +35,7 @@ class file_t:
 
 def add_newfile(syscall, i, s):
     new_file = file_t(i, s)
-    new_file.OPflow.append(syscall)
+    # new_file.OPflow.append(syscall)
     new_file.time_open = syscall[1]
     new_file.open_count += 1
     files[i] = new_file
@@ -52,7 +52,7 @@ def do_syscall(syscall):
         if file is not None:
             file.open_count += 1
             file.size = syscall[4]
-            file.OPflow.append(syscall)
+            # file.OPflow.append(syscall)
             if file.open_count == 1:
                 file.time_open = syscall[1]
             return 
@@ -64,7 +64,7 @@ def do_syscall(syscall):
         if file is not None:
             file.size = syscall[4]
             file.open_count -= 1
-            file.OPflow.append(syscall)
+            # file.OPflow.append(syscall)
             if file.time_open != 0.0:
                 if file.open_count  == 0:
                     if syscall[1] - file.time_open >= 50:
@@ -76,7 +76,7 @@ def do_syscall(syscall):
         file = files.get(syscall[3])
         if file is not None:
             file.size = syscall[4]
-            file.OPflow.append(syscall)
+            # file.OPflow.append(syscall)
             return 
         add_newfile(syscall,syscall[3], syscall[4])
         return 
@@ -85,7 +85,7 @@ def do_syscall(syscall):
         file = files.get(syscall[3])
         if file is not None:
             file.size = syscall[4]
-            file.OPflow.append(syscall)
+            # file.OPflow.append(syscall)
             return 
         add_newfile(syscall,syscall[3], syscall[4])
         return 
@@ -94,7 +94,7 @@ def do_syscall(syscall):
         file = files.get(syscall[3])
         if file is not None:
             file.size = syscall[4]
-            file.OPflow.append(syscall)
+            # file.OPflow.append(syscall)
             return 
         add_newfile(syscall,syscall[3], syscall[4])
         return   
@@ -102,19 +102,21 @@ def do_syscall(syscall):
 def overlap(tuple1, tuple2):
     max_start = max(tuple1[0], tuple2[0])
     min_end = min(tuple1[1], tuple2[1])
-    return (max_start, min_end), min_end - max_start
+    return min_end - max_start
 
-for i, f in enumerate(files.values()):
-        print(i)
-        # print(len(f.time_stamp))
-        for tuple in f.time_stamp:
-            for f2 in files.values():
-                if f2 != f:
+def get_onefile(i,fts,filesin):
+    overtime = 0
+    print(i)
+    for tuple in fts:
+            for f2 in filesin.values():
+                if i != f2.inode:
                     # print(len(f2.time_stamp))
                     for tuple2 in f2.time_stamp:
-                        intersect, intersect_t = overlap(tuple, tuple2)
+                        intersect_t = overlap(tuple, tuple2)
                         if intersect_t >= 10:
-                            f.overtime += intersect_t
+                            overtime += intersect_t
+    return (i ,overtime)
+
 
 
 if __name__ == "__main__":
@@ -139,20 +141,19 @@ if __name__ == "__main__":
     #with open(OUT_FILE, "w") as out_f:
     print(f"file length is {len(files)}")
 
-    for i, f in enumerate(files.values()):
-        print(i)
-        # print(len(f.time_stamp))
-        for tuple in f.time_stamp:
-            for f2 in files.values():
-                if f2 != f:
-                    # print(len(f2.time_stamp))
-                    for tuple2 in f2.time_stamp:
-                        intersect, intersect_t = overlap(tuple, tuple2)
-                        if intersect_t >= 10:
-                            f.overtime += intersect_t
+    files_sorted = Parallel(n_jobs = 20)(delayed(get_onefile)(f.inode, f.time_stamp,files) for f in enumerate(files.values()))
+
+    # for tuple in f.time_stamp:
+    #         for f2 in files.values():
+    #             if f2 != f:
+    #                 # print(len(f2.time_stamp))
+    #                 for tuple2 in f2.time_stamp:
+    #                     intersect_t = overlap(tuple, tuple2)
+    #                     if intersect_t >= 10:
+    #                         overtime += intersect_t
     
     print("start sorted")
-    files_sorted = sorted(files.items(), key = lambda x:x[1].overtime, reverse = True)
+    files_sorted = sorted(files_sorted, key = lambda x:x[1], reverse = True)
     with open(OUT_FILE, "w") as out_f:
         for i, f in enumerate(files_sorted):
             if i < 1000:
