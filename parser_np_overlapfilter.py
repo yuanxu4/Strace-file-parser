@@ -104,18 +104,22 @@ def overlap(tuple1, tuple2):
     min_end = min(tuple1[1], tuple2[1])
     return min_end - max_start
 
-def get_onefile(i,fts,filesin):
-    overtime = 0
-    print(i)
-    for tuple in fts:
-            for f2 in filesin.values():
-                if i != f2.inode:
-                    # print(len(f2.time_stamp))
-                    for tuple2 in f2.time_stamp:
-                        intersect_t = overlap(tuple, tuple2)
-                        if intersect_t >= 10:
-                            overtime += intersect_t
-    return (i ,overtime)
+def get_onefile(i,filesin):
+    ret = []
+    start = i * len(filesin) // 24
+    end = start + len(filesin) //24
+    for index,f in enumerate(filesin.values()):
+        if index >= start and index < end:   
+            for tuple in f.time_stamp:
+                for f2 in filesin.values():
+                    if f != f2:
+                        # print(len(f2.time_stamp))
+                        for tuple2 in f2.time_stamp:
+                            intersect_t = overlap(tuple, tuple2)
+                            if intersect_t >= 10:
+                                f.overtime += intersect_t
+            ret.append((f.inode,f.overtime))
+    return ret
 
 
 
@@ -140,18 +144,28 @@ if __name__ == "__main__":
     print("caculate overlap...")
     #with open(OUT_FILE, "w") as out_f:
     print(f"file length is {len(files)}")
-
-    files_sorted = Parallel(n_jobs = 20)(delayed(get_onefile)(f.inode, f.time_stamp,files) for f in enumerate(files.values()))
-
-    # for tuple in f.time_stamp:
+    
+    ret_list = Parallel(n_jobs = 24)(delayed(get_onefile)(i,files) for i in range(20))
+    # for i,f in enumerate(files.values()):
+    #     print(i)
+    #     for tuple in f.time_stamp:
     #         for f2 in files.values():
     #             if f2 != f:
     #                 # print(len(f2.time_stamp))
     #                 for tuple2 in f2.time_stamp:
     #                     intersect_t = overlap(tuple, tuple2)
     #                     if intersect_t >= 10:
-    #                         overtime += intersect_t
+    #                         f.overtime += intersect_t
     
+    # print("start sorted")
+    # files_sorted = sorted(files.items(), key = lambda x:x[1].overtime, reverse = True)
+    # with open(OUT_FILE, "w") as out_f:
+    #     for i, f in enumerate(files_sorted):
+    #         if i < 1000:
+    #             print(int(f[0]),file = out_f)
+    files_sorted = []
+    for l in ret_list:
+        files_sorted += l
     print("start sorted")
     files_sorted = sorted(files_sorted, key = lambda x:x[1], reverse = True)
     with open(OUT_FILE, "w") as out_f:
