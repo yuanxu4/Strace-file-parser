@@ -67,7 +67,7 @@ def do_syscall(syscall):
             # file.OPflow.append(syscall)
             if file.time_open != 0.0:
                 if file.open_count  == 0:
-                    if syscall[1] - file.time_open >= 50:
+                    if syscall[1] - file.time_open >= 10:
                         file.time_stamp.append((file.time_open, syscall[1]))
                     file.time_open = 0.0
         return
@@ -106,8 +106,8 @@ def overlap(tuple1, tuple2):
 
 def get_onefile(i,filesin):
     ret = []
-    start = i * len(filesin) // 24
-    end = start + len(filesin) //24
+    start = i * len(filesin) // JOB_NUM
+    end = start + len(filesin) //JOB_NUM
     for index,f in enumerate(filesin.values()):
         if index >= start and index < end:   
             for tuple in f.time_stamp:
@@ -127,6 +127,7 @@ if __name__ == "__main__":
     # set input file name
     TRACE_FILE = "../all_trace.npy"
     OUT_FILE = "../overlap_files"
+    JOB_NUM = 80
     if len(sys.argv) >= 2:
         TRACE_FILE = sys.argv[1]
     
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     #with open(OUT_FILE, "w") as out_f:
     print(f"file length is {len(files)}")
     
-    ret_list = Parallel(n_jobs = 24)(delayed(get_onefile)(i,files) for i in range(20))
+    ret_list = Parallel(n_jobs = 40)(delayed(get_onefile)(i,files) for i in range(JOB_NUM))
     # for i,f in enumerate(files.values()):
     #     print(i)
     #     for tuple in f.time_stamp:
@@ -170,5 +171,5 @@ if __name__ == "__main__":
     files_sorted = sorted(files_sorted, key = lambda x:x[1], reverse = True)
     with open(OUT_FILE, "w") as out_f:
         for i, f in enumerate(files_sorted):
-            if i < 1000:
+            if i < 4000:
                 print(int(f[0]),file = out_f)
