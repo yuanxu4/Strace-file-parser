@@ -67,7 +67,7 @@ def do_syscall(syscall):
             # file.OPflow.append(syscall)
             if file.time_open != 0.0:
                 if file.open_count  == 0:
-                    if syscall[1] - file.time_open >= 10:
+                    if syscall[1] - file.time_open >= 20:
                         file.time_stamp.append((file.time_open, syscall[1]))
                     file.time_open = 0.0
         return
@@ -106,10 +106,12 @@ def overlap(tuple1, tuple2):
 
 def get_onefile(i,filesin):
     ret = []
-    start = i * len(filesin) // JOB_NUM
-    end = start + len(filesin) //JOB_NUM
+    logfile = open("../log/"+str(i)+".log", "w+")
+    print(f"this file is for {i}")
     for index,f in enumerate(filesin.values()):
-        if index >= start and index < end:   
+        if index % JOB_NUM == i:  
+            print(index,file = logfile)
+            logfile.flush()
             for tuple in f.time_stamp:
                 for f2 in filesin.values():
                     if f != f2:
@@ -119,6 +121,9 @@ def get_onefile(i,filesin):
                             if intersect_t >= 10:
                                 f.overtime += intersect_t
             ret.append((f.inode,f.overtime))
+    logfile.seek(0,0)
+    print(f"done",file = logfile)
+    logfile.close()
     return ret
 
 
@@ -126,12 +131,12 @@ def get_onefile(i,filesin):
 if __name__ == "__main__":
     # set input file name
     TRACE_FILE = "../all_trace.npy"
-    OUT_FILE = "../overlap_files"
+    OUT_FILE = "../overlap_files_20"
     JOB_NUM = 80
     if len(sys.argv) >= 2:
         TRACE_FILE = sys.argv[1]
     
-    line_threshold = float('inf')
+    line_threshold = 10000000#float('inf')
 
 
     all_traces = np.load(TRACE_FILE)
@@ -146,7 +151,7 @@ if __name__ == "__main__":
     #with open(OUT_FILE, "w") as out_f:
     print(f"file length is {len(files)}")
     
-    ret_list = Parallel(n_jobs = 40)(delayed(get_onefile)(i,files) for i in range(JOB_NUM))
+    ret_list = Parallel(n_jobs = JOB_NUM)(delayed(get_onefile)(i,files) for i in range(JOB_NUM))
     # for i,f in enumerate(files.values()):
     #     print(i)
     #     for tuple in f.time_stamp:

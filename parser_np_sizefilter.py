@@ -100,7 +100,7 @@ if __name__ == "__main__":
     OUT_FILE1 = "../rsize_file"
     OUT_FILE2 = "../wsize_file"
     
-    line_threshold = float('inf')
+    line_threshold = 10000000 #float('inf')
 
 
     all_traces = np.load(TRACE_FILE)
