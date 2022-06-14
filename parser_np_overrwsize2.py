@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-
+MODE_OVERW = 1
 files = {}
 opening_inode = []
 
@@ -24,16 +24,26 @@ class file_t:
         self.overlaps = {}
         self.overlaps_done = []
         self.seq = 0
+        self.overwriteoff = []
+        self.overwritet = []
+        self.overwritesize = []
 
     inode = -1
     size = -1
     overlaps = {}
     overlaps_done = []
     seq = 0
+    overwriteoff = []
+    overwritet = []
+    overwritesize = []
 
     def print_file(self):
         print("===============================================")
         print(f"inode: {self.inode:<15} size: {self.size:<10}")
+
+    def print_overwrite(self):
+        for i,o in enumerate(self.overwritet):
+            print(f"{self.overwritet[i]:<15} {self.overwriteoff[i]:<10} {self.overwritesize[i]:<10}")
 
     def print_overlap(self):
         for i in self.overlaps_done:
@@ -49,17 +59,26 @@ class syscall:
     opsize = -1
     
     def do_rw(self, file_ : file_t, rw: int):
-        if file_.inode in useful_files:
-            for i in opening_inode:
-                if i != self.inode:
-                    ol = file_.overlaps.get(i)
-                    if ol is None:
-                        ol = overlap(i, self.time)
-                        file_.overlaps[i] = ol
-                    if rw == 1:
-                        ol.writesize += self.opsize
-                    elif rw == 0:
-                        ol.readsize += self.opsize
+        # if file_.inode in useful_files:
+        if MODE_OVERW == 1:
+            if self.off < self.isize:
+                file_.overwritet.append(self.time)
+                file_.overwriteoff.append(self.off)
+                if (self.off + self.opsize) < self.isize:
+                    file_.overwritesize.append(self.opsize)
+                else :
+                    file_.overwritesize.append(self.isize - self.off)
+                    file_.size = self.off + self.opsize
+        for i in opening_inode:
+            if i != self.inode:
+                ol = file_.overlaps.get(i)
+                if ol is None:
+                    ol = overlap(i, self.time)
+                    file_.overlaps[i] = ol
+                if rw == 1:
+                    ol.writesize += self.opsize
+                elif rw == 0:
+                    ol.readsize += self.opsize
 
     # "OPEN": "0", "CLOSE": "1", "READ": "2", "WRITE": "3","FSYNC":"4", "FDATASYNC":"5"
     def add_newfile(self):
@@ -131,21 +150,22 @@ def parse_trace(line):
 
 if __name__ == "__main__":
     # set input file name
-    TRACE_FILE = "../all_trace.npy"    
-    line_threshold = 10000000#float('inf')
+    TRACE_FILE = "../all_trace2.npy"    
+    line_threshold = float('inf')
     # get the intersectin of three filter
-    TRACE_FILE1 = "../overlap_files_20"
-    TRACE_FILE2 = "../rsize_file"
-    TRACE_FILE3 = "../wsize_file"
-    with open(TRACE_FILE1,'r',encoding='utf8') as log1:
-        with open(TRACE_FILE2,'r',encoding='utf8') as log2:
-            with open(TRACE_FILE3,'r',encoding='utf8') as log3:
-                lines1 = log1.readlines()
-                lines2 = log2.readlines()
-                lines3 = log3.readlines()
-                useful_files = set([int(f) for f in set(lines1).intersection(lines2).intersection(lines3)])
-    print(useful_files)
+    # TRACE_FILE1 = "../overlap_files_20"
+    # TRACE_FILE2 = "../rsize_file"
+    # TRACE_FILE3 = "../wsize_file"
+    # with open(TRACE_FILE1,'r',encoding='utf8') as log1:
+    #     with open(TRACE_FILE2,'r',encoding='utf8') as log2:
+    #         with open(TRACE_FILE3,'r',encoding='utf8') as log3:
+    #             lines1 = log1.readlines()
+    #             lines2 = log2.readlines()
+    #             lines3 = log3.readlines()
+    #             useful_files = set([int(f) for f in set(lines1).intersection(lines2).intersection(lines3)])
+    # print(useful_files)
     all_traces = np.load(TRACE_FILE)
+    print(len(all_traces))
     # traces_useful = np.array(([ i for i in all_traces if int(i[3]) in useful_files]))
     # print(f"the total lines is {len(all_traces)}")
     for i, line in enumerate(all_traces):
@@ -153,11 +173,12 @@ if __name__ == "__main__":
         sys_call.do_syscall()
         if i >= line_threshold:
             break
-        # if i != 0 and i % 100000 == 0:
-        #     print(f"{i} lines finished")
+        if i != 0 and i % 100000 == 0:
+            print(f"{i} lines finished")
     for f in files.values():
-        if len(f.overlaps_done) > 1:
-            print("=" * 50)
-            f.print_file()
-            f.print_overlap()
+        # if len(f.overlaps_done) > 1:
+        # print("=" * 50)
+        f.print_file()
+        # f.print_overlap()
+        f.print_overwrite()
     
