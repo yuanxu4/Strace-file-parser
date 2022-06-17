@@ -47,9 +47,7 @@ class file_t:
     def print_file(self):
         print(f"inode: {self.inode:<15} size: {self.size:<10}")
 
-    def print_overwrite(self):
-        for i,o in enumerate(self.overwritet):
-            print(f"{self.overwritet[i]:<15} {self.overwriteoff[i]:<10} {self.overwritesize[i]:<10}")
+
 
     def print_overlap(self):
         for i in self.overlaps_done:
